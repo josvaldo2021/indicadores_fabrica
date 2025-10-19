@@ -8,13 +8,12 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-  --bg-color: #f5f5f5;
-  --text-color: #333;
-  --muted-color: #6b6b6b;
-  --card-bg: rgba(255,255,255,0.04);
-  --grid-color: rgba(0,0,0,0.04);
-  --primary-color: #007bff;
-
+      --bg-color: #f5f5f5;
+      --text-color: #333;
+      --muted-color: #6b6b6b;
+      --card-bg: rgba(255,255,255,0.04);
+      --grid-color: rgba(0,0,0,0.04);
+      --primary-color: #007bff;
       background: var(--bg-color);
       color: var(--text-color);
       display: flex;
@@ -22,111 +21,22 @@
       align-items: center;
       padding: 20px;
     }
-    h1 {
-      color: #007bff;
-    }
-    .chart-title {
-      font-size: 1.05rem;
-      color: var(--text-color);
-      margin: 6px 0 8px;
-      text-align: center;
-      font-weight: 600;
-      text-transform: none;
-    }
-    /* tema escuro */
-    body.dark {
-      --bg-color: #0f1720;
-      --text-color: #e6eef8;
-      --muted-color: #9aa6b2;
-      --card-bg: rgba(255,255,255,0.03);
-      --grid-color: rgba(255,255,255,0.06);
-      --primary-color: #66b0ff;
-    }
-    /* botão de tema (usa variáveis para adaptar ao tema) */
-    :root {
-      --btn-bg: transparent;
-      --btn-border: rgba(0,0,0,0.06);
-      --btn-text: var(--text-color);
-      --btn-hover-bg: rgba(0,0,0,0.03);
-    }
-    body.dark {
-      --btn-bg: rgba(255,255,255,0.02);
-      --btn-border: rgba(255,255,255,0.12);
-      --btn-text: var(--text-color);
-      --btn-hover-bg: rgba(255,255,255,0.03);
-    }
-    #themeToggle {
-      margin-top: 6px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--btn-border);
-      background: var(--btn-bg);
-      color: var(--btn-text);
-      cursor: pointer;
-      font-weight: 600;
-    }
-    #themeToggle:hover {
-      background: var(--btn-hover-bg);
-    }
-    /* Container for a clean chart card */
-    .chart-card {
-      /* let flex parent control width */
-      max-width: none;
-      width: 100%;
-      margin-top: 30px;
-      padding: 12px;
-      border-radius: 10px;
-      background: transparent; /* keep page background visible for a cleaner look */
-      box-shadow: none;
-      display: flex;
-      justify-content: center;
-    }
-
-    /* row to place charts side-by-side */
-    .charts-row {
-      display: flex;
-      gap: 18px;
-      width: 100%;
-      max-width: 1200px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .charts-row > .chart-card {
-      flex: 1 1 48%;
-      box-sizing: border-box;
-    }
-    canvas {
-      width: 100% !important;
-      max-width: none;
-      height: 360px !important;
-      background: transparent;
-      border-radius: 6px;
-    }
-    table {
-      margin-top: 30px;
-      border-collapse: collapse;
-      width: 720px;
-      background: transparent;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    th, td {
-      border-bottom: 1px solid #f0f0f0;
-      padding: 10px;
-      text-align: left;
-      color: var(--text-color);
-    }
-    th {
-      background: transparent;
-      color: var(--muted-color);
-      font-weight: 600;
-    }
+    h1 { color: #007bff; }
+    .chart-title { font-size: 1.05rem; color: var(--text-color); margin: 6px 0 8px; text-align: center; font-weight: 600; }
+    body.dark { --bg-color: #0f1720; --text-color: #e6eef8; --muted-color: #9aa6b2; --card-bg: rgba(255,255,255,0.03); --grid-color: rgba(255,255,255,0.06); --primary-color: #66b0ff; }
+    :root { --btn-bg: transparent; --btn-border: rgba(0,0,0,0.06); --btn-text: var(--text-color); --btn-hover-bg: rgba(0,0,0,0.03); }
+    body.dark { --btn-bg: rgba(255,255,255,0.02); --btn-border: rgba(255,255,255,0.12); --btn-text: var(--text-color); --btn-hover-bg: rgba(255,255,255,0.03); }
+    #themeToggle { margin-top: 6px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--btn-text); cursor: pointer; font-weight: 600; }
+    #themeToggle:hover { background: var(--btn-hover-bg); }
+    .chart-card { max-width: none; width: 100%; margin-top: 30px; padding: 12px; border-radius: 10px; background: transparent; display: flex; justify-content: center; }
+    .charts-row { display: flex; gap: 18px; width: 100%; max-width: 1200px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+    .charts-row > .chart-card { flex: 1 1 48%; box-sizing: border-box; }
+    canvas { width: 100% !important; max-width: none; height: 360px !important; background: transparent; border-radius: 6px; }
   </style>
 </head>
 <body>
   <h1>Dashboard de Produção</h1>
-  <button id="themeToggle" style="margin-top:6px; padding:6px 10px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer;">Modo escuro</button>
+  <button id="themeToggle">Modo escuro</button>
 
   <div class="charts-row">
     <div class="chart-card">
@@ -135,27 +45,20 @@
         <canvas id="grafico"></canvas>
       </div>
     </div>
-
-    <!-- Novo gráfico: evolução anual da expedição -->
     <div class="chart-card">
       <div style="width:100%;">
-        <h2 class="chart-title">Expedição mensal em toneladas </h2>
+        <h2 class="chart-title">Expedição mensal em toneladas</h2>
         <canvas id="graficoExpedicao"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- tabela de indicadores removida -->
-
   <script>
-      // helper para resolver base da API automaticamente
-      function getApiBase() {
-        // se a página estiver sendo servida (http/https), usa o mesmo host; senão (file:) usa localhost
-        const host = (location.hostname && location.hostname !== '') ? location.hostname : '127.0.0.1';
-        const proto = (location.protocol && location.protocol !== 'file:') ? location.protocol : 'http:';
-        return proto + '//' + host + ':5000';
-      }
-    // helpers para tema e cores
+    // 🔹 API já hospedada no Render
+    function getApiBase() {
+      return 'https://indicadores-fabrica.onrender.com';
+    }
+
     function getThemeVars() {
       const s = getComputedStyle(document.body);
       const primary = (s.getPropertyValue('--primary-color') || '#007bff').trim();
@@ -171,283 +74,76 @@
     function hexToRGBA(hex, alpha) {
       if (!hex) return `rgba(0,0,0,${alpha})`;
       const h = hex.replace('#','').trim();
-      if (h.length === 3) {
-        const r = parseInt(h[0]+h[0],16);
-        const g = parseInt(h[1]+h[1],16);
-        const b = parseInt(h[2]+h[2],16);
-        return `rgba(${r},${g},${b},${alpha})`;
-      }
-      const r = parseInt(h.substring(0,2),16);
-      const g = parseInt(h.substring(2,4),16);
-      const b = parseInt(h.substring(4,6),16);
+      if (h.length === 3) { const r=parseInt(h[0]+h[0],16), g=parseInt(h[1]+h[1],16), b=parseInt(h[2]+h[2],16); return `rgba(${r},${g},${b},${alpha})`; }
+      const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
     async function carregarDados() {
       try {
-        // 🔹 Altere o IP abaixo para o IP da MÁQUINA onde está a API Flask
-    // 🔹 A URL da API é resolvida automaticamente; altere apenas se necessário
-    const response = await fetch(getApiBase() + '/producao');
+        const response = await fetch(getApiBase() + '/producao');
         const dados = await response.json();
-
-        // ---- Anteriormente exibia na tabela; agora loga os dados no console ----
-        console.debug('dados de producao:', dados);
-
-  // ---- Criar gráfico ----
-  const ctx = document.getElementById('grafico').getContext('2d');
+        const ctx = document.getElementById('grafico').getContext('2d');
         const setores = dados.map(d => d.setor);
         const pesos = dados.map(d => d.peso);
 
-        // ---- Mapa de cores fixas por setor ----
-        const coresPorSetor = {
-          "laminacao": "#007bff",
-          "corte": "#28a745",
-          "expedicao": "#dc3545",
-          "tempera": "#ffc107",
-          "lapidacao": "#17a2b8"
-        };
+        const coresPorSetor = { "laminacao":"#007bff","corte":"#28a745","expedicao":"#dc3545","tempera":"#ffc107","lapidacao":"#17a2b8" };
+        const cores = setores.map(s => coresPorSetor[s.toLowerCase()] || "#6c757d");
 
-        // Se algum setor não estiver no mapa, usa uma cor padrão
-        const cores = setores.map(setor => coresPorSetor[setor.toLowerCase()] || "#6c757d");
-
-        // Se já existe um gráfico, destrói para evitar sobreposição ao recarregar
-        if (window._graficoInstance) {
-          window._graficoInstance.destroy();
-          window._graficoInstance = null;
-        }
-        // aplica tema nas cores do chart
+        if(window._graficoInstance) { window._graficoInstance.destroy(); window._graficoInstance=null; }
         const theme = getThemeVars();
-        const coresSutis = cores.map(c => hexToRGBA(c, 0.75));
+        const coresSutis = cores.map(c=>hexToRGBA(c,0.75));
 
-        window._graficoInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: setores,
-            datasets: [{
-              label: 'Peso',
-              data: pesos,
-              backgroundColor: coresSutis,
-              borderRadius: 8,
-              borderSkipped: false,
-              barPercentage: 0.6,
-              categoryPercentage: 0.6
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: { top: 6, bottom: 6, left: 6, right: 6 } },
-            plugins: {
-              legend: { display: false },
-              title: { display: false }, // ocultar título para visual mais limpo
-              tooltip: {
-                backgroundColor: theme.isDark ? '#111827' : '#fff',
-                titleColor: theme.text,
-                bodyColor: theme.text,
-                borderColor: theme.isDark ? 'rgba(255,255,255,0.06)' : '#e9e9e9',
-                borderWidth: 1,
-                padding: 10,
-                boxPadding: 6,
-                boxWidth: 10,
-                callbacks: {
-                  label: function(context) {
-                    const v = context.parsed.y ?? context.parsed;
-                    return 'Peso: ' + Number(v).toLocaleString('pt-BR');
-                  }
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { color: theme.muted }
-              },
-              y: {
-                grid: { color: theme.grid },
-                ticks: {
-                  color: theme.muted,
-                  beginAtZero: true,
-                  callback: function(value) { return Number(value).toLocaleString('pt-BR'); }
-                }
-              }
-            },
-            animation: { duration: 700, easing: 'easeOutQuart' },
-            interaction: { mode: 'index', intersect: false }
+        window._graficoInstance = new Chart(ctx,{
+          type:'bar',
+          data:{ labels:setores, datasets:[{ label:'Peso', data:pesos, backgroundColor:coresSutis, borderRadius:8, borderSkipped:false, barPercentage:0.6, categoryPercentage:0.6 }] },
+          options:{ responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{display:false}, tooltip:{backgroundColor:theme.isDark?'#111827':'#fff', titleColor:theme.text, bodyColor:theme.text, borderColor:theme.isDark?'rgba(255,255,255,0.06)':'#e9e9e9', borderWidth:1, padding:10 } },
+            scales:{ x:{ ticks:{ color: theme.muted }, grid:{display:false} }, y:{ ticks:{ color: theme.muted, beginAtZero:true } } }
           }
         });
-      } catch (erro) {
-        alert("Erro ao carregar dados: " + erro);
-        console.error(erro);
-      }
+      } catch(err){ console.error('Erro ao carregar produção', err); }
+    }
+
+    async function carregarExpedicaoAnual() {
+      try {
+        const resp = await fetch(getApiBase()+'/expedicao_anual');
+        const dados = await resp.json();
+        if(!dados || dados.length===0) return;
+
+        const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
+        if(window._graficoExpedicao) { window._graficoExpedicao.destroy(); window._graficoExpedicao=null; }
+
+        const theme = getThemeVars();
+        const labels = dados.map(d => d.mes || d.data || d[0]);
+        const valores = dados.map(d => d.valor || d.peso || d[1] || 0);
+
+        window._graficoExpedicao = new Chart(ctx2, {
+          type:'line',
+          data:{ labels:labels, datasets:[{ label:'Expedição', data:valores, borderColor:theme.primary, backgroundColor:hexToRGBA(theme.primary,0.08), tension:0.3, fill:true }] },
+          options:{ responsive:true, maintainAspectRatio:false }
+        });
+      } catch(err){ console.error('Erro ao carregar expedição',err); }
     }
 
     carregarDados();
-
-    // ---------------- gráfico da expedição anual ----------------
-    async function carregarExpedicaoAnual() {
-      try {
-    const resp = await fetch(getApiBase() + '/expedicao_anual');
-        const dados = await resp.json();
-
-        // os campos na tabela são: `mes` (primeiro dia do mês ou número do mês) e `peso`
-        if (!dados || dados.length === 0) {
-          console.warn('Nenhum dado retornado para expedição anual');
-          return;
-        }
-
-        const dateKey = 'mes';
-        const valorKey = 'valor';
-
-        function parseToDate(v) {
-          if (v == null) return null;
-          // número do mês 1..12
-          const n = Number(v);
-          if (!isNaN(n) && n >= 1 && n <= 12) return new Date(2000, n - 1, 1);
-
-          // ISO yyyy-mm-dd
-          if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v)) {
-            const parts = v.split('T')[0].split('-');
-            return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-          }
-
-          // dd/mm/yyyy
-          if (typeof v === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(v)) {
-            const parts = v.split('/');
-            return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]));
-          }
-
-          // tenta Date do JS
-          const dt = new Date(v);
-          return dt.toString() === 'Invalid Date' ? null : dt;
-        }
-
-        // monta array com datas parseadas e valores
-        const entries = dados.map(r => {
-          return {
-            raw: r,
-            d: parseToDate(r[dateKey]),
-            valor: (r[valorKey] == null) ? 0 : Number(r[valorKey])
-          };
-        });
-
-        console.log('expedicao raw:', dados);
-        console.log('expedicao parsed entries:', entries);
-
-        // se temos datas parseadas, agrupamos por ano e montamos uma linha por ano (jan..dez)
-        const anyDate = entries.some(e => e.d instanceof Date && !isNaN(e.d));
-        const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
-
-        if (window._graficoExpedicao) {
-          window._graficoExpedicao.destroy();
-          window._graficoExpedicao = null;
-        }
-
-        const theme2 = getThemeVars();
-        const highlightThreshold = 700;
-        const highlightColor = '#27F531';
-
-        if (anyDate) {
-          // meses fixos (jan..dec)
-          const months = Array.from({length:12}, (_,i) => new Date(2000,i,1).toLocaleString('pt-BR',{month:'short'}));
-
-          // agrupa valores por ano e mês
-          const mapYear = new Map();
-          entries.forEach(e => {
-            if (!e.d) return;
-            const y = e.d.getFullYear();
-            const m = e.d.getMonth();
-            if (!mapYear.has(y)) mapYear.set(y, Array(12).fill(null));
-            mapYear.get(y)[m] = isNaN(e.valor) ? 0 : e.valor;
-          });
-
-          const years = Array.from(mapYear.keys()).sort();
-
-          // palette for non-current years
-          const pal = [ '#6c757d', '#17a2b8', '#28a745', '#ffc107' ];
-          const currentYear = new Date().getFullYear();
-
-          const datasets = years.map((y, idx) => {
-            // tratar zeros como ausência para quebrar a linha
-            const data = mapYear.get(y).map(v => (v == null || Number(v) === 0) ? null : v);
-            const isCurrent = Number(y) === currentYear;
-            const baseColor = isCurrent ? theme2.primary : (pal[idx % pal.length]);
-            const defaultPointBg = theme2.isDark ? theme2.bg : '#fff';
-            const pointBg = data.map(v => (v != null && v > highlightThreshold) ? highlightColor : defaultPointBg);
-            const pointBorder = data.map(v => (v != null && v > highlightThreshold) ? highlightColor : baseColor);
-            const pointR = data.map(v => (v != null && v > highlightThreshold) ? 6 : (isCurrent ? 5 : 4));
-            const pointBw = data.map(v => (v != null && v > highlightThreshold) ? 3 : (isCurrent ? 3 : 2));
-
-            return {
-              label: String(y),
-              data: data,
-              borderColor: baseColor,
-              borderWidth: isCurrent ? 3 : 2,
-              backgroundColor: hexToRGBA(baseColor, 0.08),
-              tension: 0.3,
-              pointRadius: pointR,
-              pointBackgroundColor: pointBg,
-              pointBorderColor: pointBorder,
-              pointBorderWidth: pointBw,
-              fill: true
-            };
-          });
-
-          window._graficoExpedicao = new Chart(ctx2, {
-            type: 'line',
-            data: { labels: months, datasets: datasets },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              elements: { point: { hitRadius: 15, hoverRadius: 10 } },
-              interaction: { mode: 'nearest', axis: 'x', intersect: true },
-              plugins: { legend: { display: true }, tooltip: { backgroundColor: theme2.isDark ? '#111827' : '#fff', titleColor: theme2.text, bodyColor: theme2.text, borderColor: theme2.isDark ? 'rgba(255,255,255,0.06)' : '#e9e9e9' } },
-              scales: { x: { grid: { display: false }, ticks: { color: theme2.muted } }, y: { grid: { color: theme2.grid }, ticks: { color: theme2.muted } } }
-            }
-          });
-        } else {
-          // fallback: dados sem datas - usa labels diretas e uma única linha
-          const labels = dados.map(r => String(r[dateKey]));
-          // tratar zeros como ausência (null) para quebrar a linha
-          const valores = dados.map(r => { const n = Number(r[valorKey]); return isNaN(n) ? null : (n === 0 ? null : n); });
-          const defaultPointBg = theme2.isDark ? theme2.bg : '#fff';
-          const pointBgColors = valores.map(v => (v != null && v > highlightThreshold) ? highlightColor : defaultPointBg);
-          const pointBorderColors = valores.map(v => (v != null && v > highlightThreshold) ? highlightColor : theme2.primary);
-          const pointRadii = valores.map(v => (v != null && v > highlightThreshold) ? 6 : 4);
-          const pointBorderWidths = valores.map(v => (v != null && v > highlightThreshold) ? 3 : 2);
-
-          window._graficoExpedicao = new Chart(ctx2, {
-            type: 'line',
-            data: { labels: labels, datasets: [{ label: 'Expedição (mensal)', data: valores, borderColor: theme2.primary, backgroundColor: hexToRGBA(theme2.primary,0.08), tension:0.3, pointRadius: pointRadii, pointBackgroundColor: pointBgColors, pointBorderColor: pointBorderColors, pointBorderWidth: pointBorderWidths, spanGaps: false, fill: true }] },
-            options: { responsive: true, maintainAspectRatio: false, elements: { point: { hitRadius: 20, hoverRadius: 12 } }, interaction: { mode: 'nearest', axis: 'x', intersect: true }, plugins: { legend: { display: false }, tooltip: { backgroundColor: theme2.isDark ? '#111827' : '#fff', titleColor: theme2.text, bodyColor: theme2.text, borderColor: theme2.isDark ? 'rgba(255,255,255,0.06)' : '#e9e9e9' } }, scales: { x: { grid: { display: false }, ticks: { color: theme2.muted } }, y: { grid: { color: theme2.grid }, ticks: { color: theme2.muted } } } }
-          });
-        }
-
-      } catch (err) {
-        console.error('Erro ao carregar expedição anual', err);
-      }
-    }
-
     carregarExpedicaoAnual();
 
-    // ---- tema escuro ----
+    // ---- Tema escuro ----
     const themeToggle = document.getElementById('themeToggle');
-    function applyTheme(isDark) {
+    function applyTheme(isDark){
       document.body.classList.toggle('dark', isDark);
-      themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
-
-      // reconstruir os gráficos para reaplicar cores do tema
-      try { carregarDados(); } catch(e) { console.warn(e); }
-      try { carregarExpedicaoAnual(); } catch(e) { console.warn(e); }
+      themeToggle.textContent = isDark?'Modo claro':'Modo escuro';
+      try{ carregarDados(); }catch(e){console.warn(e);}
+      try{ carregarExpedicaoAnual(); }catch(e){console.warn(e);}
     }
 
-    // carrega preferência do localStorage
     const saved = localStorage.getItem('themeDark');
-    const isDarkSaved = saved === '1';
-    applyTheme(isDarkSaved);
+    applyTheme(saved==='1');
 
-    themeToggle.addEventListener('click', () => {
+    themeToggle.addEventListener('click',()=>{
       const isDark = !document.body.classList.contains('dark');
-      localStorage.setItem('themeDark', isDark ? '1' : '0');
+      localStorage.setItem('themeDark', isDark?'1':'0');
       applyTheme(isDark);
     });
   </script>
