@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Access DB files
+*.accdb
+*.laccdb
+
+# Secrets or local config
+secrets.json
+config.local.json
+
+# Logs
+*.log
+
+# Node modules (if any)
+node_modules/
