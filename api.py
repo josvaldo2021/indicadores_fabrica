@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
 import os
@@ -71,6 +71,29 @@ def listar_expedicao_anual():
     finally:
         conn.close()
     return jsonify(resultado)
+
+
+# 🟢 Adicionar Expedição anual
+@app.route("/expedicao_anual", methods=["POST"])
+def adicionar_expedicao_anual():
+    try:
+        dados = request.get_json()
+        mes = dados.get("mes")
+        valor = dados.get("valor")
+
+        if not mes or not valor:
+            return jsonify({"erro": "Mês e valor são obrigatórios."}), 400
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO expedicao_anual (mes, valor) VALUES (?, ?)", (mes, valor))
+        conn.commit()
+        return jsonify({"mensagem": "Registro adicionado com sucesso!"}), 201
+    except Exception as e:
+        print("Erro em /expedicao_anual (POST):", e)
+        return jsonify({"erro": str(e)}), 500
+    finally:
+        if 'conn' in locals() and conn: conn.close()
 
 # 🚀 Rodar no Render
 if __name__ == "__main__":
