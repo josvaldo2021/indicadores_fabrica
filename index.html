@@ -113,16 +113,34 @@
         const resp = await fetch(`${API_BASE}/expedicao_anual`);
         const dados = await resp.json();
 
-        if(!dados || !dados.length) return;
+        console.log('--- Debug Expedição ---');
+        console.log('Dados crus da API para Expedição:', dados);
+
+        if(!dados || !dados.length) {
+          console.log('Dados de expedição vazios ou nulos. Gráfico não será gerado.');
+          return;
+        }
+
         const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
         const months = Array.from({length:12}, (_,i)=>new Date(2000,i,1).toLocaleString('pt-BR',{month:'short'}));
 
-        const valores = Array(12).fill(0);
+        const valores = Array(12).fill(0); // Inicializa com 12 zeros
+
         dados.forEach(d => {
-          const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-          const m = monthNames.indexOf(d.mes);
-          if(m !== -1) valores[m] = Number(d.valor);
+          // Extrai o número do mês da string "DD/MM/YYYY"
+          // Pega a parte do meio (MM), converte para inteiro e subtrai 1 para obter o índice (0-11)
+          const mesNumero = parseInt(d.mes.substring(3, 5), 10); // Pega "01" de "01/01/2024", ou "02", etc.
+          const mesIndex = mesNumero - 1; // Transforma 1 em 0 (Janeiro), 2 em 1 (Fevereiro), etc.
+
+          if(mesIndex >= 0 && mesIndex < 12) { // Garante que o índice é válido
+            valores[mesIndex] = Number(d.valor);
+          } else {
+            console.warn(`Mês inválido (${mesNumero}) ou formato de data inesperado para "${d.mes}".`);
+          }
         });
+
+        console.log('Valores de Expedição processados para o gráfico:', valores);
+        console.log('Labels de mês para o gráfico:', months);
 
         if(window._graficoExpedicao) window._graficoExpedicao.destroy();
         const theme = getThemeVars();
@@ -131,9 +149,10 @@
           data:{ labels:months, datasets:[{ label:'Expedição', data:valores, borderColor:theme.primary, backgroundColor:hexToRGBA(theme.primary,0.1), tension:0.3, fill:true }]},
           options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true} } }
         });
+        console.log('Gráfico de Expedição tentou ser renderizado.');
 
       } catch(e) {
-        console.error('Erro ao carregar expedição:', e);
+        console.error('Erro fatal ao carregar expedição:', e);
       }
     }
 
@@ -145,6 +164,7 @@
     function applyTheme(isDark) {
       document.body.classList.toggle('dark', isDark);
       themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
+      // Recarrega os gráficos para aplicar as cores do tema
       carregarDados();
       carregarExpedicao();
     }
@@ -159,5 +179,3 @@
   </script>
 </body>
 </html>
-
-
