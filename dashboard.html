@@ -24,14 +24,11 @@
     h1 { color: #007bff; }
     .chart-title { font-size: 1.05rem; color: var(--text-color); margin: 6px 0 8px; text-align: center; font-weight: 600; }
     body.dark { --bg-color: #0f1720; --text-color: #e6eef8; --muted-color: #9aa6b2; --card-bg: rgba(255,255,255,0.03); --grid-color: rgba(255,255,255,0.06); --primary-color: #66b0ff; }
-    :root { --btn-bg: transparent; --btn-border: rgba(0,0,0,0.06); --btn-text: var(--text-color); --btn-hover-bg: rgba(0,0,0,0.03); }
-    body.dark { --btn-bg: rgba(255,255,255,0.02); --btn-border: rgba(255,255,255,0.12); --btn-text: var(--text-color); --btn-hover-bg: rgba(255,255,255,0.03); }
-    #themeToggle { margin-top: 6px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--btn-border); background: var(--btn-bg); color: var(--btn-text); cursor: pointer; font-weight: 600; }
-    #themeToggle:hover { background: var(--btn-hover-bg); }
-    .chart-card { max-width: none; width: 100%; margin-top: 30px; padding: 12px; border-radius: 10px; background: transparent; display: flex; justify-content: center; }
-    .charts-row { display: flex; gap: 18px; width: 100%; max-width: 1200px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
-    .charts-row > .chart-card { flex: 1 1 48%; box-sizing: border-box; }
-    canvas { width: 100% !important; max-width: none; height: 360px !important; background: transparent; border-radius: 6px; }
+    #themeToggle { margin-top:6px; padding:6px 10px; border-radius:6px; border:1px solid var(--btn-border); background: var(--btn-bg); color: var(--btn-text); cursor:pointer; font-weight:600; }
+    .chart-card { max-width:none; width:100%; margin-top:30px; padding:12px; border-radius:10px; background:transparent; display:flex; justify-content:center; }
+    .charts-row { display:flex; gap:18px; width:100%; max-width:1200px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+    .charts-row > .chart-card { flex:1 1 48%; box-sizing:border-box; }
+    canvas { width:100% !important; max-width:none; height:360px !important; background:transparent; border-radius:6px; }
   </style>
 </head>
 <body>
@@ -41,7 +38,7 @@
   <div class="charts-row">
     <div class="chart-card">
       <div style="width:100%;">
-        <h2 class="chart-title">Produção diaria por setor semana anterior</h2>
+        <h2 class="chart-title">Produção diária por setor semana anterior</h2>
         <canvas id="grafico"></canvas>
       </div>
     </div>
@@ -54,10 +51,8 @@
   </div>
 
   <script>
-    // 🔹 API já hospedada no Render
-    function getApiBase() {
-      return 'https://indicadores-fabrica.onrender.com';
-    }
+    // 🔹 URL da API online
+    const API_BASE = "https://indicadores-fabrica.onrender.com";
 
     function getThemeVars() {
       const s = getComputedStyle(document.body);
@@ -74,70 +69,83 @@
     function hexToRGBA(hex, alpha) {
       if (!hex) return `rgba(0,0,0,${alpha})`;
       const h = hex.replace('#','').trim();
-      if (h.length === 3) { const r=parseInt(h[0]+h[0],16), g=parseInt(h[1]+h[1],16), b=parseInt(h[2]+h[2],16); return `rgba(${r},${g},${b},${alpha})`; }
-      const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+      if (h.length === 3) { const r=parseInt(h[0]+h[0],16); const g=parseInt(h[1]+h[1],16); const b=parseInt(h[2]+h[2],16); return `rgba(${r},${g},${b},${alpha})`; }
+      const r=parseInt(h.substring(0,2),16); const g=parseInt(h.substring(2,4),16); const b=parseInt(h.substring(4,6),16);
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
     async function carregarDados() {
       try {
-        const response = await fetch(getApiBase() + '/producao');
+        const response = await fetch(API_BASE + '/producao');
         const dados = await response.json();
+
         const ctx = document.getElementById('grafico').getContext('2d');
         const setores = dados.map(d => d.setor);
         const pesos = dados.map(d => d.peso);
 
-        const coresPorSetor = { "laminacao":"#007bff","corte":"#28a745","expedicao":"#dc3545","tempera":"#ffc107","lapidacao":"#17a2b8" };
-        const cores = setores.map(s => coresPorSetor[s.toLowerCase()] || "#6c757d");
+        const coresPorSetor = {
+          "laminacao": "#007bff",
+          "corte": "#28a745",
+          "expedicao": "#dc3545",
+          "tempera": "#ffc107",
+          "lapidacao": "#17a2b8"
+        };
+        const cores = setores.map(setor => coresPorSetor[setor.toLowerCase()] || "#6c757d");
 
-        if(window._graficoInstance) { window._graficoInstance.destroy(); window._graficoInstance=null; }
+        if (window._graficoInstance) { window._graficoInstance.destroy(); window._graficoInstance=null; }
+
         const theme = getThemeVars();
         const coresSutis = cores.map(c=>hexToRGBA(c,0.75));
 
         window._graficoInstance = new Chart(ctx,{
           type:'bar',
-          data:{ labels:setores, datasets:[{ label:'Peso', data:pesos, backgroundColor:coresSutis, borderRadius:8, borderSkipped:false, barPercentage:0.6, categoryPercentage:0.6 }] },
-          options:{ responsive:true, maintainAspectRatio:false,
-            plugins:{ legend:{display:false}, tooltip:{backgroundColor:theme.isDark?'#111827':'#fff', titleColor:theme.text, bodyColor:theme.text, borderColor:theme.isDark?'rgba(255,255,255,0.06)':'#e9e9e9', borderWidth:1, padding:10 } },
-            scales:{ x:{ ticks:{ color: theme.muted }, grid:{display:false} }, y:{ ticks:{ color: theme.muted, beginAtZero:true } } }
-          }
+          data:{ labels:setores, datasets:[{label:'Peso', data:pesos, backgroundColor:coresSutis, borderRadius:8, borderSkipped:false, barPercentage:0.6, categoryPercentage:0.6}] },
+          options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:6,bottom:6,left:6,right:6}}, plugins:{legend:{display:false}, title:{display:false}, tooltip:{backgroundColor:theme.isDark?'#111827':'#fff', titleColor:theme.text, bodyColor:theme.text, borderColor:theme.isDark?'rgba(255,255,255,0.06)':'#e9e9e9', borderWidth:1, padding:10}} , scales:{ x:{grid:{display:false},ticks:{color:theme.muted}}, y:{grid:{color:theme.grid},ticks:{color:theme.muted, beginAtZero:true}}}, animation:{duration:700, easing:'easeOutQuart'}, interaction:{mode:'index', intersect:false} }
         });
-      } catch(err){ console.error('Erro ao carregar produção', err); }
+      } catch (erro) { console.error('Erro ao carregar dados:', erro); }
     }
 
     async function carregarExpedicaoAnual() {
       try {
-        const resp = await fetch(getApiBase()+'/expedicao_anual');
+        const resp = await fetch(API_BASE + '/expedicao_anual');
         const dados = await resp.json();
-        if(!dados || dados.length===0) return;
+
+        if (!dados || dados.length === 0) return;
 
         const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
-        if(window._graficoExpedicao) { window._graficoExpedicao.destroy(); window._graficoExpedicao=null; }
+        if (window._graficoExpedicao) { window._graficoExpedicao.destroy(); window._graficoExpedicao=null; }
 
-        const theme = getThemeVars();
-        const labels = dados.map(d => d.mes || d.data || d[0]);
-        const valores = dados.map(d => d.valor || d.peso || d[1] || 0);
+        const months = Array.from({length:12}, (_,i)=>new Date(2000,i,1).toLocaleString('pt-BR',{month:'short'}));
+        const entries = dados.map(r => ({ d: new Date(r.mes), valor: Number(r.valor || 0) }));
 
-        window._graficoExpedicao = new Chart(ctx2, {
-          type:'line',
-          data:{ labels:labels, datasets:[{ label:'Expedição', data:valores, borderColor:theme.primary, backgroundColor:hexToRGBA(theme.primary,0.08), tension:0.3, fill:true }] },
-          options:{ responsive:true, maintainAspectRatio:false }
+        const mapYear = new Map();
+        entries.forEach(e=>{ const y=e.d.getFullYear(), m=e.d.getMonth(); if(!mapYear.has(y)) mapYear.set(y, Array(12).fill(null)); mapYear.get(y)[m]=e.valor; });
+
+        const years = Array.from(mapYear.keys()).sort();
+        const theme2 = getThemeVars();
+
+        const datasets = years.map((y, idx) => {
+          const data = mapYear.get(y).map(v=>v===0?null:v);
+          const isCurrent = y===new Date().getFullYear();
+          const baseColor = isCurrent ? theme2.primary : ['#6c757d','#17a2b8','#28a745','#ffc107'][idx%4];
+          return { label:String(y), data, borderColor:baseColor, borderWidth:isCurrent?3:2, backgroundColor:hexToRGBA(baseColor,0.08), tension:0.3, fill:true };
         });
-      } catch(err){ console.error('Erro ao carregar expedição',err); }
+
+        window._graficoExpedicao = new Chart(ctx2, { type:'line', data:{labels:months,datasets:datasets}, options:{ responsive:true, maintainAspectRatio:false } });
+
+      } catch(err) { console.error('Erro ao carregar expedição anual', err); }
     }
 
     carregarDados();
     carregarExpedicaoAnual();
 
-    // ---- Tema escuro ----
     const themeToggle = document.getElementById('themeToggle');
-    function applyTheme(isDark){
+    function applyTheme(isDark) {
       document.body.classList.toggle('dark', isDark);
-      themeToggle.textContent = isDark?'Modo claro':'Modo escuro';
-      try{ carregarDados(); }catch(e){console.warn(e);}
-      try{ carregarExpedicaoAnual(); }catch(e){console.warn(e);}
+      themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
+      carregarDados();
+      carregarExpedicaoAnual();
     }
-
     const saved = localStorage.getItem('themeDark');
     applyTheme(saved==='1');
 
