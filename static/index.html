@@ -118,14 +118,15 @@
 
         const dadosPorAno = {};
         dados.forEach(d => {
-          const ano = d.mes.slice(-4); 
-          const mes = parseInt(d.mes.substring(0,2),10) - 1;
+          const partes = d.mes.split("/"); // ["DD","MM","YYYY"]
+          const mesIndex = parseInt(partes[1],10) - 1;
+          const ano = partes[2];
           if(!dadosPorAno[ano]) dadosPorAno[ano] = Array(12).fill(0);
-          dadosPorAno[ano][mes] = Number(d.valor);
+          dadosPorAno[ano][mesIndex] = Number(d.valor);
         });
 
         const theme = getThemeVars();
-        const cores = ["#007bff", "#28a745", "#dc3545", "#ffc107"]; 
+        const cores = ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8"]; 
         const datasets = Object.keys(dadosPorAno).map((ano,i)=>({
           label: ano,
           data: dadosPorAno[ano],
