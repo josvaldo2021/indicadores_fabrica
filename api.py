@@ -94,10 +94,16 @@ def adicionar_expedicao_anual():
         return jsonify({"erro": str(e)}), 500
     finally:
         if 'conn' in locals() and conn: conn.close()
+            
+@app.route("/")
+def index():
+    return app.send_static_file("index.html")
+
 
 # 🚀 Rodar no Render
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))  # Render define a porta dinamicamente
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
