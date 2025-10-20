@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 import sqlite3
 import os
@@ -6,20 +6,20 @@ from datetime import date, datetime
 from decimal import Decimal
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # Permite requisições de qualquer origem
 
-# Caminho do banco SQLite
+# Caminho do banco SQLite (na raiz do projeto)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CAMINHO_BANCO = os.path.join(BASE_DIR, "dados.db")
+DB_PATH = os.path.join(BASE_DIR, "dados.db")  # Troque para seu arquivo SQLite
 
-# 🟢 Função de conexão
+# Função para conectar
 def conectar():
-    conn = sqlite3.connect(CAMINHO_BANCO)
-    conn.row_factory = sqlite3.Row  # permite acessar por nome da coluna
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row  # Para acessar colunas pelo nome
     return conn
 
-# 🟢 Serializar dados
-def serializar_registro(row):
+# Helper para serializar tipos
+def serialize_row(row):
     item = {}
     for key in row.keys():
         val = row[key]
@@ -36,46 +36,37 @@ def serializar_registro(row):
 def ping():
     return jsonify({"msg": "API funcionando com SQLite!"})
 
-# 🟢 Listar produção
+# 🟢 Produção diária
 @app.route("/producao", methods=["GET"])
 def listar_producao():
-    conn = None
-    cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute("SELECT id, setor, peso FROM producao ORDER BY id")
-        dados = cursor.fetchall()
-        resultado = [dict(row) for row in dados]
-        return jsonify(resultado)
+        rows = cursor.fetchall()
+        resultado = [serialize_row(row) for row in rows]
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
     finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+        conn.close()
+    return jsonify(resultado)
 
-# 🟢 Listar expedição anual
+# 🟢 Expedição anual
 @app.route("/expedicao_anual", methods=["GET"])
 def listar_expedicao_anual():
-    conn = None
-    cursor = None
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM expedicao_anual ORDER BY 1")
-        dados = cursor.fetchall()
-        resultado = [serializar_registro(row) for row in dados]
-        return jsonify(resultado)
+        cursor.execute("SELECT * FROM expedicao_anual ORDER BY mes")  # supondo coluna 'mes'
+        rows = cursor.fetchall()
+        resultado = [serialize_row(row) for row in rows]
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
     finally:
-        if cursor: cursor.close()
-        if conn: conn.close()
+        conn.close()
+    return jsonify(resultado)
 
+# 🚀 Rodar no Render
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-
