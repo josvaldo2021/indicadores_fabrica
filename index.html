@@ -53,7 +53,7 @@
 
   <script>
     // URL da API no Render
-    const API_BASE = "https://indicadores-fabrica-1.onrender.com";
+    const API_BASE = "https://5000-i9f65kwb4rp0eyniufewh-a6dc7325.manus.computer";
 
     function hexToRGBA(hex, alpha) {
       if (!hex) return `rgba(0,0,0,${alpha})`;
@@ -119,8 +119,9 @@
 
         const valores = Array(12).fill(0);
         dados.forEach(d => {
-          const m = Number(d.mes)-1;
-          if(m>=0 && m<12) valores[m] = Number(d.valor);
+          const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+          const m = monthNames.indexOf(d.mes);
+          if(m !== -1) valores[m] = Number(d.valor);
         });
 
         if(window._graficoExpedicao) window._graficoExpedicao.destroy();
