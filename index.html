@@ -11,6 +11,8 @@
       --bg-color: #f5f5f5;
       --text-color: #333;
       --muted-color: #6b6b6b;
+      --card-bg: rgba(255,255,255,0.04);
+      --grid-color: rgba(0,0,0,0.04);
       --primary-color: #007bff;
       background: var(--bg-color);
       color: var(--text-color);
@@ -19,156 +21,140 @@
       align-items: center;
       padding: 20px;
     }
-
-    h1 { color: var(--primary-color); }
-
-    .chart-card {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px 0;
-      padding: 12px;
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-
-    canvas { width: 100% !important; height: 350px !important; }
-
-    #themeToggle {
-      margin-top: 10px;
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      background: transparent;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    body.dark {
-      --bg-color: #0f1720;
-      --text-color: #e6eef8;
-      --primary-color: #66b0ff;
-      background: var(--bg-color);
-      color: var(--text-color);
-    }
+    h1 { color: #007bff; }
+    .chart-title { font-size: 1.05rem; color: var(--text-color); margin: 6px 0 8px; text-align: center; font-weight: 600; }
+    body.dark { --bg-color: #0f1720; --text-color: #e6eef8; --muted-color: #9aa6b2; --card-bg: rgba(255,255,255,0.03); --grid-color: rgba(255,255,255,0.06); --primary-color: #66b0ff; }
+    #themeToggle { margin-top: 6px; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); background: transparent; color: var(--text-color); cursor: pointer; font-weight: 600; }
+    #themeToggle:hover { background: rgba(0,0,0,0.03); }
+    .chart-card { max-width: none; width: 100%; margin-top: 30px; padding: 12px; border-radius: 10px; background: transparent; display: flex; justify-content: center; }
+    .charts-row { display: flex; gap: 18px; width: 100%; max-width: 1200px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+    .charts-row > .chart-card { flex: 1 1 48%; box-sizing: border-box; }
+    canvas { width: 100% !important; max-width: none; height: 360px !important; border-radius: 6px; background: transparent; }
   </style>
 </head>
 <body>
   <h1>Dashboard de Produção</h1>
   <button id="themeToggle">Modo escuro</button>
 
-  <div class="chart-card">
-    <h2>Produção diária por setor</h2>
-    <canvas id="grafico"></canvas>
-  </div>
-
-  <div class="chart-card">
-    <h2>Expedição mensal em toneladas</h2>
-    <canvas id="graficoExpedicao"></canvas>
+  <div class="charts-row">
+    <div class="chart-card">
+      <div style="width:100%;">
+        <h2 class="chart-title">Produção diária por setor</h2>
+        <canvas id="grafico"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div style="width:100%;">
+        <h2 class="chart-title">Expedição mensal em toneladas</h2>
+        <canvas id="graficoExpedicao"></canvas>
+      </div>
+    </div>
   </div>
 
   <script>
+    // URL da API no Render
     const API_BASE = "https://indicadores-fabrica-1.onrender.com";
 
-    // Toggle tema
-    const themeToggle = document.getElementById('themeToggle');
-    themeToggle.addEventListener('click', () => {
-      const isDark = document.body.classList.toggle('dark');
-      localStorage.setItem('themeDark', isDark ? '1' : '0');
-      carregarProducao();
-      carregarExpedicao();
-    });
-
-    // Carregar tema salvo
-    if(localStorage.getItem('themeDark') === '1') document.body.classList.add('dark');
-
-    function hexToRGBA(hex, alpha=1) {
-      hex = hex.replace('#','');
-      let r = parseInt(hex.substring(0,2),16);
-      let g = parseInt(hex.substring(2,4),16);
-      let b = parseInt(hex.substring(4,6),16);
+    function hexToRGBA(hex, alpha) {
+      if (!hex) return `rgba(0,0,0,${alpha})`;
+      const h = hex.replace('#','').trim();
+      if (h.length === 3) {
+        const r = parseInt(h[0]+h[0],16);
+        const g = parseInt(h[1]+h[1],16);
+        const b = parseInt(h[2]+h[2],16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+      const r = parseInt(h.substring(0,2),16);
+      const g = parseInt(h.substring(2,4),16);
+      const b = parseInt(h.substring(4,6),16);
       return `rgba(${r},${g},${b},${alpha})`;
     }
 
-    async function carregarProducao() {
+    function getThemeVars() {
+      const s = getComputedStyle(document.body);
+      const primary = (s.getPropertyValue('--primary-color') || '#007bff').trim();
+      const text = (s.getPropertyValue('--text-color') || '#333').trim();
+      const muted = (s.getPropertyValue('--muted-color') || '#6b6b6b').trim();
+      const grid = (s.getPropertyValue('--grid-color') || 'rgba(0,0,0,0.04)').trim();
+      const bg = (s.getPropertyValue('--bg-color') || '#f5f5f5').trim();
+      const cardBg = (s.getPropertyValue('--card-bg') || '#fff').trim();
+      const isDark = document.body.classList.contains('dark');
+      return { primary, text, muted, grid, bg, cardBg, isDark };
+    }
+
+    async function carregarDados() {
       try {
-        const res = await fetch(`${API_BASE}/producao`);
-        const dados = await res.json();
+        const resp = await fetch(`${API_BASE}/producao`);
+        const dados = await resp.json();
 
         const ctx = document.getElementById('grafico').getContext('2d');
         const setores = dados.map(d => d.setor);
         const pesos = dados.map(d => d.peso);
 
-        const coresPorSetor = {
-          "laminacao": "#007bff",
-          "corte": "#28a745",
-          "expedicao": "#dc3545",
-          "tempera": "#ffc107",
-          "lapidacao": "#17a2b8"
-        };
+        const coresPorSetor = { "laminacao": "#007bff", "corte": "#28a745", "expedicao": "#dc3545", "tempera": "#ffc107", "lapidacao": "#17a2b8" };
         const cores = setores.map(s => coresPorSetor[s.toLowerCase()] || "#6c757d");
+        const theme = getThemeVars();
+        const coresSutis = cores.map(c => hexToRGBA(c,0.75));
 
-        if(window._grafico) window._grafico.destroy();
-        window._grafico = new Chart(ctx, {
+        if(window._graficoInstance) window._graficoInstance.destroy();
+        window._graficoInstance = new Chart(ctx, {
           type: 'bar',
-          data: {
-            labels: setores,
-            datasets: [{
-              label: 'Peso',
-              data: pesos,
-              backgroundColor: cores.map(c => hexToRGBA(c, 0.75)),
-              borderRadius: 8
-            }]
-          },
-          options: { responsive:true, maintainAspectRatio:false }
+          data: { labels: setores, datasets: [{ label: 'Peso', data: pesos, backgroundColor: coresSutis, borderRadius: 8 }] },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:theme.muted}}, y:{ticks:{color:theme.muted, beginAtZero:true}} } }
         });
       } catch(e) {
-        console.error("Erro ao carregar produção:", e);
+        console.error('Erro ao carregar produção:', e);
+        alert("Não foi possível carregar dados de produção.");
       }
     }
 
     async function carregarExpedicao() {
       try {
-        const res = await fetch(`${API_BASE}/expedicao_anual`);
-        const dados = await res.json();
-        if(!dados.length) return;
+        const resp = await fetch(`${API_BASE}/expedicao_anual`);
+        const dados = await resp.json();
 
-        const ctx = document.getElementById('graficoExpedicao').getContext('2d');
-        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-        const mapAno = new Map();
+        if(!dados || !dados.length) return;
+        const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
+        const months = Array.from({length:12}, (_,i)=>new Date(2000,i,1).toLocaleString('pt-BR',{month:'short'}));
+
+        const valores = Array(12).fill(0);
         dados.forEach(d => {
-          const dt = new Date(d.mes);
-          const ano = dt.getFullYear();
-          const mes = dt.getMonth();
-          if(!mapAno.has(ano)) mapAno.set(ano, Array(12).fill(null));
-          mapAno.get(ano)[mes] = d.valor;
+          const m = Number(d.mes)-1;
+          if(m>=0 && m<12) valores[m] = Number(d.valor);
         });
 
-        const anos = Array.from(mapAno.keys()).sort();
-        const datasets = anos.map((ano, idx) => ({
-          label: ano,
-          data: mapAno.get(ano),
-          borderColor: idx===anos.length-1 ? "#007bff" : "#6c757d",
-          backgroundColor: hexToRGBA(idx===anos.length-1?"#007bff":"#6c757d", 0.1),
-          fill:true,
-          tension:0.3
-        }));
-
         if(window._graficoExpedicao) window._graficoExpedicao.destroy();
-        window._graficoExpedicao = new Chart(ctx, {
-          type: 'line',
-          data: { labels: meses, datasets: datasets },
-          options: { responsive:true, maintainAspectRatio:false }
+        const theme = getThemeVars();
+        window._graficoExpedicao = new Chart(ctx2, {
+          type:'line',
+          data:{ labels:months, datasets:[{ label:'Expedição', data:valores, borderColor:theme.primary, backgroundColor:hexToRGBA(theme.primary,0.1), tension:0.3, fill:true }]},
+          options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true} } }
         });
 
       } catch(e) {
-        console.error("Erro ao carregar expedição:", e);
+        console.error('Erro ao carregar expedição:', e);
       }
     }
 
-    carregarProducao();
+    carregarDados();
     carregarExpedicao();
+
+    // Tema escuro
+    const themeToggle = document.getElementById('themeToggle');
+    function applyTheme(isDark) {
+      document.body.classList.toggle('dark', isDark);
+      themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
+      carregarDados();
+      carregarExpedicao();
+    }
+    const saved = localStorage.getItem('themeDark') === '1';
+    applyTheme(saved);
+
+    themeToggle.addEventListener('click', ()=>{
+      const isDark = !document.body.classList.contains('dark');
+      localStorage.setItem('themeDark', isDark ? '1' : '0');
+      applyTheme(isDark);
+    });
   </script>
 </body>
 </html>
-
