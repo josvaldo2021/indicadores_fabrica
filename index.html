@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Produção</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      --bg-color: #f5f5f5;
+      --text-color: #333;
+      --muted-color: #6b6b6b;
+      --primary-color: #007bff;
+      background: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 { color: var(--primary-color); }
+
+    .chart-card {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    canvas { width: 100% !important; height: 350px !important; }
+
+    #themeToggle {
+      margin-top: 10px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    body.dark {
+      --bg-color: #0f1720;
+      --text-color: #e6eef8;
+      --primary-color: #66b0ff;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+  </style>
+</head>
+<body>
+  <h1>Dashboard de Produção</h1>
+  <button id="themeToggle">Modo escuro</button>
+
+  <div class="chart-card">
+    <h2>Produção diária por setor</h2>
+    <canvas id="grafico"></canvas>
+  </div>
+
+  <div class="chart-card">
+    <h2>Expedição mensal em toneladas</h2>
+    <canvas id="graficoExpedicao"></canvas>
+  </div>
+
+  <script>
+    const API_BASE = "https://indicadores-fabrica.onrender.com";
+
+    // Toggle tema
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark');
+      localStorage.setItem('themeDark', isDark ? '1' : '0');
+      carregarProducao();
+      carregarExpedicao();
+    });
+
+    // Carregar tema salvo
+    if(localStorage.getItem('themeDark') === '1') document.body.classList.add('dark');
+
+    function hexToRGBA(hex, alpha=1) {
+      hex = hex.replace('#','');
+      let r = parseInt(hex.substring(0,2),16);
+      let g = parseInt(hex.substring(2,4),16);
+      let b = parseInt(hex.substring(4,6),16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    async function carregarProducao() {
+      try {
+        const res = await fetch(`${API_BASE}/producao`);
+        const dados = await res.json();
+
+        const ctx = document.getElementById('grafico').getContext('2d');
+        const setores = dados.map(d => d.setor);
+        const pesos = dados.map(d => d.peso);
+
+        const coresPorSetor = {
+          "laminacao": "#007bff",
+          "corte": "#28a745",
+          "expedicao": "#dc3545",
+          "tempera": "#ffc107",
+          "lapidacao": "#17a2b8"
+        };
+        const cores = setores.map(s => coresPorSetor[s.toLowerCase()] || "#6c757d");
+
+        if(window._grafico) window._grafico.destroy();
+        window._grafico = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: setores,
+            datasets: [{
+              label: 'Peso',
+              data: pesos,
+              backgroundColor: cores.map(c => hexToRGBA(c, 0.75)),
+              borderRadius: 8
+            }]
+          },
+          options: { responsive:true, maintainAspectRatio:false }
+        });
+      } catch(e) {
+        console.error("Erro ao carregar produção:", e);
+      }
+    }
+
+    async function carregarExpedicao() {
+      try {
+        const res = await fetch(`${API_BASE}/expedicao_anual`);
+        const dados = await res.json();
+        if(!dados.length) return;
+
+        const ctx = document.getElementById('graficoExpedicao').getContext('2d');
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+        const mapAno = new Map();
+        dados.forEach(d => {
+          const dt = new Date(d.mes);
+          const ano = dt.getFullYear();
+          const mes = dt.getMonth();
+          if(!mapAno.has(ano)) mapAno.set(ano, Array(12).fill(null));
+          mapAno.get(ano)[mes] = d.valor;
+        });
+
+        const anos = Array.from(mapAno.keys()).sort();
+        const datasets = anos.map((ano, idx) => ({
+          label: ano,
+          data: mapAno.get(ano),
+          borderColor: idx===anos.length-1 ? "#007bff" : "#6c757d",
+          backgroundColor: hexToRGBA(idx===anos.length-1?"#007bff":"#6c757d", 0.1),
+          fill:true,
+          tension:0.3
+        }));
+
+        if(window._graficoExpedicao) window._graficoExpedicao.destroy();
+        window._graficoExpedicao = new Chart(ctx, {
+          type: 'line',
+          data: { labels: meses, datasets: datasets },
+          options: { responsive:true, maintainAspectRatio:false }
+        });
+
+      } catch(e) {
+        console.error("Erro ao carregar expedição:", e);
+      }
+    }
+
+    carregarProducao();
+    carregarExpedicao();
+  </script>
+</body>
+</html>
