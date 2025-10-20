@@ -74,7 +74,7 @@ def listar_expedicao_anual():
 
 
 # 🟢 Adicionar Expedição anual
-@app.route("/expedicao_anual", methods=["POST"])
+@app.route("/registro_expedicao", methods=["POST"])
 def adicionar_expedicao_anual():
     try:
         dados = request.get_json()
@@ -90,7 +90,7 @@ def adicionar_expedicao_anual():
         conn.commit()
         return jsonify({"mensagem": "Registro adicionado com sucesso!"}), 201
     except Exception as e:
-        print("Erro em /expedicao_anual (POST):", e)
+        print("Erro em /registro_expedicao (POST):", e)
         return jsonify({"erro": str(e)}), 500
     finally:
         if 'conn' in locals() and conn: conn.close()
@@ -100,3 +100,4 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))  # Render define a porta dinamicamente
     app.run(host="0.0.0.0", port=port, debug=True)
+
