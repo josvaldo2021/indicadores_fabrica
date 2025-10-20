@@ -8,15 +8,19 @@ from decimal import Decimal
 app = Flask(__name__)
 CORS(app)  # Permite requisições de qualquer origem
 
-# Caminho do banco SQLite (na raiz do projeto)
+# Caminho do banco SQLite (relativo à raiz do projeto)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "dados.db")  # Troque para seu arquivo SQLite
+DB_PATH = os.path.join(BASE_DIR, "dados.db")  # Certifique-se de que o arquivo está no Git
 
 # Função para conectar
 def conectar():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # Para acessar colunas pelo nome
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row  # Para acessar colunas pelo nome
+        return conn
+    except Exception as e:
+        print("Erro ao conectar no banco:", e)
+        raise
 
 # Helper para serializar tipos
 def serialize_row(row):
@@ -46,6 +50,7 @@ def listar_producao():
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
+        print("Erro em /producao:", e)
         return jsonify({"erro": str(e)}), 500
     finally:
         conn.close()
@@ -57,10 +62,11 @@ def listar_expedicao_anual():
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM expedicao_anual ORDER BY mes")  # supondo coluna 'mes'
+        cursor.execute("SELECT * FROM expedicao_anual ORDER BY mes")  # Coluna 'mes'
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
+        print("Erro em /expedicao_anual:", e)
         return jsonify({"erro": str(e)}), 500
     finally:
         conn.close()
@@ -68,5 +74,6 @@ def listar_expedicao_anual():
 
 # 🚀 Rodar no Render
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    import os
+    port = int(os.environ.get("PORT", 5000))  # Render define a porta dinamicamente
+    app.run(host="0.0.0.0", port=port, debug=True)
