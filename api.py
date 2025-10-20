@@ -62,7 +62,7 @@ def listar_expedicao_anual():
     try:
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM expedicao_anual ORDER BY mes")  # Coluna 'mes'
+        cursor.execute("SELECT mes, valor FROM expedicao_anual ORDER BY mes")
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
