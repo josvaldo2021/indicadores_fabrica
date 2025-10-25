@@ -11,7 +11,7 @@
       --bg-color: #f5f5f5;
       --text-color: #333;
       --muted-color: #6b6b6b;
-      --card-bg: rgba(255,255,255,0.04);
+      --card-bg: rgba(255,255,255,0.04 );
       --grid-color: rgba(0,0,0,0.04);
       --primary-color: #007bff;
       background: var(--bg-color);
@@ -64,19 +64,9 @@
   </div>
 
   <script>
-    // Correção 1: Mock da API para simular o endpoint e os dados fornecidos pelo usuário.
     const API_BASE = "https://indicadores-fabrica.onrender.com";
 
-    // Dados de exemplo fornecidos pelo usuário:
-    const mockExpedicaoData = [{"mes":"2024-01-01","valor":450.0},{"mes":"2024-02-01","valor":500.0},{"mes":"2025-01-01","valor":600.0}];
-    
-    // Correção 2: Adicionando a função carregarDados() ausente, mas mantendo-a vazia, pois o foco é no carregarExpedicao().
-    async function carregarDados() {
-        console.log("Função carregarDados() executada. Implementação ausente no código original.");
-        // A lógica para o gráfico 'grafico' (Produção diária por setor) estaria aqui.
-    }
-
-    function hexToRGBA(hex, alpha) {
+    function hexToRGBA(hex, alpha ) {
       if (!hex) return `rgba(0,0,0,${alpha})`;
       const h = hex.replace('#','').trim();
       if (h.length === 3) {
@@ -102,56 +92,73 @@
       return { primary, text, muted, grid, bg, cardBg };
     }
 
-    // Correção 3: Removendo a função carregarExpedicao() duplicada (linhas 159-208) e mantendo a primeira (linhas 95-157) como base para a correção.
+    // FUNÇÃO QUE ESTAVA FALTANDO. Adicionada aqui para evitar erro de referência.
+    async function carregarDados() {
+        // Lógica para o gráfico 'grafico' (Produção diária por setor)
+        // Se você tiver o código para este gráfico, insira-o aqui.
+        console.log("Função carregarDados() executada. (Lógica não fornecida)");
+    }
 
+    // FUNÇÃO CORRIGIDA
     async function carregarExpedicao() {
       try {
-        // Correção 4: Usando fetch real (comentado) ou o mock para testes.
-        // const resp = await fetch(`${API_BASE}/expedicao_anual`);
-        // const dados = await resp.json();
-        const dados = mockExpedicaoData; // Usando dados mockados para garantir que a lógica funcione
-
-        if (!dados || !dados.length) return;
+        const resp = await fetch(`${API_BASE}/expedicao_anual`);
+        
+        // Verifica se a resposta foi bem-sucedida
+        if (!resp.ok) {
+            throw new Error(`Erro HTTP: ${resp.status}`);
+        }
+        
+        const dados = await resp.json();
+        
+        if (!dados || !Array.isArray(dados) || dados.length === 0) {
+            console.warn('Nenhum dado retornado pela API.');
+            return;
+        }
 
         const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
+        const theme = getThemeVars(); // Pega as variáveis de tema
 
         // Meses fixos
         const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-        // Identifica todos os anos presentes nos dados
+        // 1. Identifica todos os anos presentes nos dados
         const anosSet = new Set();
         dados.forEach(d => {
-          // Correção 5: A chave 'mes' no objeto de dados é uma string de data.
-          // O código original (linha 109) já estava correto ao usar 'd.mes'.
-          const dt = new Date(d.mes); 
-          if (!isNaN(dt)) anosSet.add(dt.getFullYear());
+          const dt = new Date(d.mes);
+          // Garante que a data é válida antes de tentar obter o ano
+          if (!isNaN(dt.getTime())) {
+              anosSet.add(dt.getFullYear());
+          }
         });
         const anos = Array.from(anosSet).sort();
 
-        // Inicializa os valores por ano
+        // 2. Inicializa os valores por ano
         const valoresPorAno = {};
         anos.forEach(a => valoresPorAno[a] = Array(12).fill(0));
 
-        // Preenche os valores
+        // 3. Preenche os valores
         dados.forEach(d => {
           const dt = new Date(d.mes);
-          if (!isNaN(dt)) {
+          if (!isNaN(dt.getTime())) {
             const ano = dt.getFullYear();
             const mesIndex = dt.getMonth();
-            // Correção 6: Certificar-se de que o valor é um número.
-            valoresPorAno[ano][mesIndex] = Number(d.valor);
+            // Garante que o valor é um número e só preenche se o ano existir no nosso mapa
+            if (valoresPorAno[ano]) {
+                valoresPorAno[ano][mesIndex] = Number(d.valor);
+            }
           }
         });
 
-        // Cria datasets
-        const theme = getThemeVars(); // Usando getThemeVars para cores dinâmicas
-        const cores = [theme.primary, "#28a745", "#dc3545", "#ffc107", "#17a2b8"]; // Usando a cor primária do tema como primeira cor
+        // 4. Cria datasets
+        // Cores para os datasets. Usando a cor primária do tema como primeira opção.
+        const cores = [theme.primary, "#28a745", "#dc3545", "#ffc107", "#17a2b8"]; 
+        
         const datasets = anos.map((ano, i) => ({
-          label: ano.toString(),
+          label: ano.toString(), // Agora garantido que 'ano' é um número
           data: valoresPorAno[ano],
-          // Correção 7: Usar a cor do tema para o primeiro dataset
-          borderColor: i === 0 ? theme.primary : cores[i % cores.length],
-          backgroundColor: hexToRGBA(i === 0 ? theme.primary : cores[i % cores.length], 0.1),
+          borderColor: cores[i % cores.length],
+          backgroundColor: hexToRGBA(cores[i % cores.length], 0.1),
           fill: true,
           tension: 0.3
         }));
@@ -166,11 +173,10 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: true } },
+            plugins: { legend: { display: true, labels: { color: theme.text } } },
             scales: {
                 y: {
                     beginAtZero: true,
-                    // Correção 8: Adicionar cores dinâmicas aos eixos
                     grid: { color: theme.grid },
                     ticks: { color: theme.muted }
                 },
@@ -184,6 +190,7 @@
 
       } catch(e) {
         console.error('Erro ao carregar expedição:', e);
+        // Se houver um erro de rede (CORS, etc.), o erro será logado aqui.
       }
     }
 
@@ -196,7 +203,7 @@
     function applyTheme(isDark) {
       document.body.classList.toggle('dark', isDark);
       themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
-      // Correção 9: Recarregar os gráficos para aplicar as novas cores do tema
+      // Recarrega os gráficos para aplicar as novas cores do tema
       carregarDados();
       carregarExpedicao();
     }
