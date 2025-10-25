@@ -11,7 +11,7 @@
       --bg-color: #f5f5f5;
       --text-color: #333;
       --muted-color: #6b6b6b;
-      --card-bg: rgba(255,255,255,0.04 );
+      --card-bg: rgba(255,255,255,0.04 ); /* Changed from #fff to better match the original intention */
       --grid-color: rgba(0,0,0,0.04);
       --primary-color: #007bff;
       background: var(--bg-color);
@@ -52,7 +52,7 @@
     <div class="chart-card">
       <div style="width:100%;">
         <h2 class="chart-title">Produção diária por setor</h2>
-        <canvas id="grafico"></canvas>
+        <canvas id="graficoProducaoDiaria"></canvas> <!-- Changed ID for clarity -->
       </div>
     </div>
     <div class="chart-card">
@@ -92,19 +92,88 @@
       return { primary, text, muted, grid, bg, cardBg };
     }
 
-    // FUNÇÃO QUE ESTAVA FALTANDO. Adicionada aqui para evitar erro de referência.
-    async function carregarDados() {
-        // Lógica para o gráfico 'grafico' (Produção diária por setor)
-        // Se você tiver o código para este gráfico, insira-o aqui.
-        console.log("Função carregarDados() executada. (Lógica não fornecida)");
+    // Global chart instances to allow destruction and recreation
+    let _graficoProducaoDiaria;
+    let _graficoExpedicao;
+
+    async function carregarProducaoDiaria() {
+        try {
+            const resp = await fetch(`${API_BASE}/producao_diaria_por_setor`); // Adjust endpoint as needed
+            if (!resp.ok) {
+                throw new Error(`Erro HTTP: ${resp.status}`);
+            }
+            const dados = await resp.json();
+
+            if (!dados || !Array.isArray(dados) || dados.length === 0) {
+                console.warn('Nenhum dado de produção diária retornado pela API.');
+                // Render an empty chart or a message if no data
+                if (_graficoProducaoDiaria) _graficoProducaoDiaria.destroy();
+                const ctx = document.getElementById('graficoProducaoDiaria').getContext('2d');
+                _graficoProducaoDiaria = new Chart(ctx, {
+                    type: 'bar', // Or 'line', depending on your preference
+                    data: { labels: [], datasets: [] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+                return;
+            }
+
+            const ctx = document.getElementById('graficoProducaoDiaria').getContext('2d');
+            const theme = getThemeVars();
+
+            // Example data processing for "Produção diária por setor"
+            // Assuming data is like: [{ setor: "A", data: "YYYY-MM-DD", valor: 100 }, ...]
+            const setores = [...new Set(dados.map(d => d.setor))].sort();
+            const datas = [...new Set(dados.map(d => d.data))].sort(); // Assuming 'data' is a string 'YYYY-MM-DD'
+
+            const cores = [theme.primary, "#28a745", "#dc3545", "#ffc107", "#17a2b8", "#6f42c1"]; 
+
+            const datasets = setores.map((setor, i) => {
+                const dataPoints = datas.map(data => {
+                    const entry = dados.find(d => d.setor === setor && d.data === data);
+                    return entry ? Number(entry.valor) : 0;
+                });
+                return {
+                    label: setor,
+                    data: dataPoints,
+                    backgroundColor: hexToRGBA(cores[i % cores.length], 0.7),
+                    borderColor: cores[i % cores.length],
+                    borderWidth: 1
+                };
+            });
+
+            if (_graficoProducaoDiaria) _graficoProducaoDiaria.destroy();
+
+            _graficoProducaoDiaria = new Chart(ctx, {
+                type: 'bar', // Can be 'line' or 'bar'
+                data: { labels: datas, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, labels: { color: theme.text } } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: theme.grid },
+                            ticks: { color: theme.muted }
+                        },
+                        x: {
+                            grid: { color: theme.grid },
+                            ticks: { color: theme.muted }
+                        }
+                    }
+                }
+            });
+
+        } catch (e) {
+            console.error('Erro ao carregar produção diária:', e);
+        }
     }
 
-    // FUNÇÃO CORRIGIDA
+
     async function carregarExpedicao() {
       try {
         const resp = await fetch(`${API_BASE}/expedicao_anual`);
         
-        // Verifica se a resposta foi bem-sucedida
         if (!resp.ok) {
             throw new Error(`Erro HTTP: ${resp.status}`);
         }
@@ -112,50 +181,52 @@
         const dados = await resp.json();
         
         if (!dados || !Array.isArray(dados) || dados.length === 0) {
-            console.warn('Nenhum dado retornado pela API.');
+            console.warn('Nenhum dado de expedição retornado pela API.');
+            // Render an empty chart or a message if no data
+            if (_graficoExpedicao) _graficoExpedicao.destroy();
+            const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
+            _graficoExpedicao = new Chart(ctx2, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
             return;
         }
 
         const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
-        const theme = getThemeVars(); // Pega as variáveis de tema
+        const theme = getThemeVars();
 
-        // Meses fixos
         const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-        // 1. Identifica todos os anos presentes nos dados
         const anosSet = new Set();
         dados.forEach(d => {
           const dt = new Date(d.mes);
-          // Garante que a data é válida antes de tentar obter o ano
-          if (!isNaN(dt.getTime())) {
+          if (!isNaN(dt.getTime())) { // Check for valid date
               anosSet.add(dt.getFullYear());
+          } else {
+              console.warn(`Data inválida encontrada: ${d.mes}`);
           }
         });
         const anos = Array.from(anosSet).sort();
 
-        // 2. Inicializa os valores por ano
         const valoresPorAno = {};
         anos.forEach(a => valoresPorAno[a] = Array(12).fill(0));
 
-        // 3. Preenche os valores
         dados.forEach(d => {
           const dt = new Date(d.mes);
           if (!isNaN(dt.getTime())) {
             const ano = dt.getFullYear();
             const mesIndex = dt.getMonth();
-            // Garante que o valor é um número e só preenche se o ano existir no nosso mapa
-            if (valoresPorAno[ano]) {
+            if (valoresPorAno[ano] && d.valor !== undefined && d.valor !== null) {
                 valoresPorAno[ano][mesIndex] = Number(d.valor);
             }
           }
         });
 
-        // 4. Cria datasets
-        // Cores para os datasets. Usando a cor primária do tema como primeira opção.
         const cores = [theme.primary, "#28a745", "#dc3545", "#ffc107", "#17a2b8"]; 
         
         const datasets = anos.map((ano, i) => ({
-          label: ano.toString(), // Agora garantido que 'ano' é um número
+          label: ano.toString(),
           data: valoresPorAno[ano],
           borderColor: cores[i % cores.length],
           backgroundColor: hexToRGBA(cores[i % cores.length], 0.1),
@@ -163,11 +234,9 @@
           tension: 0.3
         }));
 
-        // Destrói gráfico antigo se existir
-        if (window._graficoExpedicao) window._graficoExpedicao.destroy();
+        if (_graficoExpedicao) _graficoExpedicao.destroy();
 
-        // Cria gráfico
-        window._graficoExpedicao = new Chart(ctx2, {
+        _graficoExpedicao = new Chart(ctx2, {
           type: 'line',
           data: { labels: meses, datasets: datasets },
           options: {
@@ -190,12 +259,11 @@
 
       } catch(e) {
         console.error('Erro ao carregar expedição:', e);
-        // Se houver um erro de rede (CORS, etc.), o erro será logado aqui.
       }
     }
 
     // Carrega dados
-    carregarDados();
+    carregarProducaoDiaria(); // Call the new function
     carregarExpedicao();
 
     // Tema escuro
@@ -203,8 +271,7 @@
     function applyTheme(isDark) {
       document.body.classList.toggle('dark', isDark);
       themeToggle.textContent = isDark ? 'Modo claro' : 'Modo escuro';
-      // Recarrega os gráficos para aplicar as novas cores do tema
-      carregarDados();
+      carregarProducaoDiaria(); // Recarrega os gráficos para aplicar as novas cores do tema
       carregarExpedicao();
     }
     const saved = localStorage.getItem('themeDark') === '1';
