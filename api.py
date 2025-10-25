@@ -9,40 +9,23 @@ from decimal import Decimal
 app = Flask(__name__)
 CORS(app)  # Permite requisições de qualquer origem
 
-# ========================
-# 🔧 CONFIGURAÇÃO DO BANCO
-# ========================
+# ✅ Pega a string de conexão do ambiente (Render → Environment → DATABASE_URL)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# As variáveis abaixo devem ser definidas no painel do Render (Environment Variables)
-DB_HOST = os.getenv("DB_HOST", "ep-seu-endereco-do-neon.aws.neon.tech")
-DB_NAME = os.getenv("DB_NAME", "nome_do_banco")
-DB_USER = os.getenv("DB_USER", "usuario")
-DB_PASS = os.getenv("DB_PASS", "senha")
-DB_PORT = os.getenv("DB_PORT", "5432")
+if not DATABASE_URL:
+    raise RuntimeError("❌ A variável de ambiente DATABASE_URL não foi configurada.")
 
+# 🔌 Função para conectar ao PostgreSQL (Neon)
 def conectar():
-    """Conecta ao banco PostgreSQL no Neon."""
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASS,
-            port=DB_PORT,
-            sslmode="require"  # Neon exige SSL
-        )
+        conn = psycopg2.connect(DATABASE_URL, sslmode="require")
         return conn
     except Exception as e:
-        print("❌ Erro ao conectar no PostgreSQL:", e)
+        print("Erro ao conectar no banco:", e)
         raise
 
-
-# ========================
-# 🧩 FUNÇÃO DE SERIALIZAÇÃO
-# ========================
-
+# 🧰 Função para converter registros em JSON
 def serialize_row(row):
-    """Converte registros (Row) em dicionários compatíveis com JSON."""
     item = {}
     for key, val in row.items():
         if isinstance(val, (datetime, date)):
@@ -53,52 +36,42 @@ def serialize_row(row):
             item[key] = val
     return item
 
-
-# ========================
-# 🧱 ENDPOINTS DA API
-# ========================
-
 # 🟢 Teste simples
 @app.route("/ping", methods=["GET"])
 def ping():
-    return jsonify({"msg": "API funcionando com PostgreSQL no Neon!"})
-
+    return jsonify({"msg": "API funcionando com PostgreSQL (Neon)!"})
 
 # 🟢 Produção diária
 @app.route("/producao", methods=["GET"])
 def listar_producao():
     try:
         conn = conectar()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT id, setor, peso FROM producao ORDER BY id;")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT id, setor, peso FROM producao ORDER BY id")
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
         print("Erro em /producao:", e)
         return jsonify({"erro": str(e)}), 500
     finally:
-        if conn:
-            conn.close()
+        conn.close()
     return jsonify(resultado)
-
 
 # 🟢 Expedição anual
 @app.route("/expedicao_anual", methods=["GET"])
 def listar_expedicao_anual():
     try:
         conn = conectar()
-        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SELECT id, mes, valor FROM expedicao_anual ORDER BY mes;")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT mes, valor FROM expedicao_anual ORDER BY mes")
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
         print("Erro em /expedicao_anual:", e)
         return jsonify({"erro": str(e)}), 500
     finally:
-        if conn:
-            conn.close()
+        conn.close()
     return jsonify(resultado)
-
 
 # 🟢 Adicionar Expedição anual
 @app.route("/registro_expedicao", methods=["POST"])
@@ -108,24 +81,12 @@ def adicionar_expedicao_anual():
         mes = dados.get("mes")
         valor = dados.get("valor")
 
-        if not mes or not valor:
+        if not mes or valor is None:
             return jsonify({"erro": "Mês e valor são obrigatórios."}), 400
-
-        # Conversão opcional (se vier em formato brasileiro)
-        try:
-            mes_formatado = datetime.strptime(mes, "%d/%m/%Y").date()
-        except ValueError:
-            try:
-                mes_formatado = datetime.strptime(mes, "%Y-%m-%d").date()
-            except ValueError:
-                return jsonify({"erro": "Formato de data inválido. Use YYYY-MM-DD ou DD/MM/YYYY."}), 400
 
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO expedicao_anual (mes, valor) VALUES (%s, %s);",
-            (mes_formatado, valor)
-        )
+        cursor.execute("INSERT INTO expedicao_anual (mes, valor) VALUES (%s, %s)", (mes, valor))
         conn.commit()
         return jsonify({"mensagem": "Registro adicionado com sucesso!"}), 201
     except Exception as e:
@@ -135,46 +96,12 @@ def adicionar_expedicao_anual():
         if 'conn' in locals() and conn:
             conn.close()
 
-
-# 🧱 Criar tabelas (rota opcional, útil para inicialização no Render)
-@app.route("/initdb", methods=["GET"])
-def inicializar_banco():
-    try:
-        conn = conectar()
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS expedicao_anual (
-                id SERIAL PRIMARY KEY,
-                mes DATE NOT NULL,
-                valor NUMERIC(12,2) NOT NULL
-            );
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS producao (
-                id SERIAL PRIMARY KEY,
-                setor VARCHAR(100),
-                peso NUMERIC(12,2)
-            );
-        """)
-        conn.commit()
-        return jsonify({"mensagem": "Tabelas criadas/verificadas com sucesso!"})
-    except Exception as e:
-        print("Erro em /initdb:", e)
-        return jsonify({"erro": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
-
-
-# 🏠 Página inicial (opcional, se houver front em /static)
+# 🏠 Rota raiz (opcional)
 @app.route("/")
 def index():
-    return app.send_static_file("index.html")
+    return jsonify({"status": "API online e conectada ao PostgreSQL!"})
 
-
-# ========================
-# 🚀 EXECUÇÃO NO RENDER
-# ========================
+# 🚀 Rodar localmente ou no Render
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render define a porta automaticamente
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
