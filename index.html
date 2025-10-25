@@ -92,38 +92,69 @@
       return { primary, text, muted, grid, bg, cardBg };
     }
 
-    async function carregarDados() {
-      try {
-        const resp = await fetch(`${API_BASE}/producao`);
-        const dados = await resp.json();
+    async function carregarExpedicao() {
+  try {
+    const resp = await fetch(`${API_BASE}/expedicao_anual`);
+    const dados = await resp.json();
+    if (!dados || !dados.length) return;
 
-        const ctx = document.getElementById('grafico').getContext('2d');
-        const setores = dados.map(d => d.setor);
-        const pesos = dados.map(d => d.peso);
+    const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
 
-        const coresPorSetor = { "laminacao": "#007bff", "corte": "#28a745", "expedicao": "#dc3545", "tempera": "#ffc107", "lapidacao": "#17a2b8" };
-        const cores = setores.map(s => coresPorSetor[s.toLowerCase()] || "#6c757d");
-        const theme = getThemeVars();
-        const coresSutis = cores.map(c => hexToRGBA(c,0.75));
+    // Meses fixos
+    const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-        if(window._graficoInstance) window._graficoInstance.destroy();
-        window._graficoInstance = new Chart(ctx, {
-          type: 'bar',
-          data: { labels: setores, datasets: [{ label: 'Peso', data: pesos, backgroundColor: coresSutis, borderRadius: 8 }] },
-          options: {
-            responsive:true,
-            maintainAspectRatio:false,
-            plugins:{ legend:{display:false} },
-            scales:{
-              x:{ticks:{color:theme.muted}},
-              y:{ticks:{color:theme.muted, beginAtZero:true}}
-            }
-          }
-        });
-      } catch(e) {
-        console.error('Erro ao carregar produção:', e);
+    // Identifica todos os anos presentes nos dados
+    const anosSet = new Set();
+    dados.forEach(d => {
+      const dt = new Date(d.mes);
+      if (!isNaN(dt)) anosSet.add(dt.getFullYear());
+    });
+    const anos = Array.from(anosSet).sort();
+
+    // Inicializa os valores por ano
+    const valoresPorAno = {};
+    anos.forEach(a => valoresPorAno[a] = Array(12).fill(0));
+
+    // Preenche os valores
+    dados.forEach(d => {
+      const dt = new Date(d.mes);
+      if (!isNaN(dt)) {
+        const ano = dt.getFullYear();
+        const mesIndex = dt.getMonth();
+        valoresPorAno[ano][mesIndex] = Number(d.valor);
       }
-    }
+    });
+
+    // Cria datasets
+    const cores = ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8"];
+    const datasets = anos.map((ano, i) => ({
+      label: ano.toString(),            // Garantir que o label seja string
+      data: valoresPorAno[ano],
+      borderColor: cores[i % cores.length],
+      backgroundColor: hexToRGBA(cores[i % cores.length], 0.1),
+      fill: true,
+      tension: 0.3
+    }));
+
+    // Destrói gráfico antigo se existir
+    if (window._graficoExpedicao) window._graficoExpedicao.destroy();
+
+    // Cria gráfico
+    window._graficoExpedicao = new Chart(ctx2, {
+      type: 'line',
+      data: { labels: meses, datasets: datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+  } catch(e) {
+    console.error('Erro ao carregar expedição:', e);
+  }
+}
 
     async function carregarExpedicao() {
       try {
@@ -199,3 +230,4 @@
   </script>
 </body>
 </html>
+
