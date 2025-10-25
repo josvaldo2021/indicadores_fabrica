@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import psycopg2
 import psycopg2.extras
@@ -11,7 +11,6 @@ CORS(app)  # Permite requisições de qualquer origem
 
 # ✅ Pega a string de conexão do ambiente (Render → Environment → DATABASE_URL)
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 if not DATABASE_URL:
     raise RuntimeError("❌ A variável de ambiente DATABASE_URL não foi configurada.")
 
@@ -96,18 +95,14 @@ def adicionar_expedicao_anual():
         if 'conn' in locals() and conn:
             conn.close()
 
-# 🏠 Rota raiz (opcional)
-
+# 🏠 Rota raiz servindo index.html
 @app.route("/")
 def index():
-    # Caminho absoluto da pasta static
     base_dir = os.path.dirname(os.path.abspath(__file__))
     static_dir = os.path.join(base_dir, "static")
     return send_from_directory(static_dir, "index.html")
-
 
 # 🚀 Rodar localmente ou no Render
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
