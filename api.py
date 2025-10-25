@@ -97,11 +97,17 @@ def adicionar_expedicao_anual():
             conn.close()
 
 # 🏠 Rota raiz (opcional)
+
 @app.route("/")
 def index():
-    return jsonify({"status": "API online e conectada ao PostgreSQL!"})
+    # Caminho absoluto da pasta static
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    static_dir = os.path.join(base_dir, "static")
+    return send_from_directory(static_dir, "index.html")
+
 
 # 🚀 Rodar localmente ou no Render
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
