@@ -37,7 +37,7 @@
       background: transparent; color: var(--text-color);
       cursor: pointer; font-weight: 600;
     }
-    #themeToggle:hover { background: rgba(0,0,0,0.03); }
+    #themeToggle:hover { background: rgba(0,0,0,0.08); }
     .chart-card { max-width: none; width: 100%; margin-top: 30px; padding: 12px; border-radius: 10px; background: transparent; display: flex; justify-content: center; }
     .charts-row { display: flex; gap: 18px; width: 100%; max-width: 1200px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
     .charts-row > .chart-card { flex: 1 1 48%; box-sizing: border-box; }
@@ -57,7 +57,7 @@
     </div>
     <div class="chart-card">
       <div style="width:100%;">
-        <h2 class="chart-title">Expedição anual em toneladas</h2>
+        <h2 class="chart-title">Expedição anual (comparativo de anos)</h2>
         <canvas id="graficoExpedicao"></canvas>
       </div>
     </div>
@@ -89,8 +89,7 @@
       const grid = (s.getPropertyValue('--grid-color') || 'rgba(0,0,0,0.04)').trim();
       const bg = (s.getPropertyValue('--bg-color') || '#f5f5f5').trim();
       const cardBg = (s.getPropertyValue('--card-bg') || '#fff').trim();
-      const isDark = document.body.classList.contains('dark');
-      return { primary, text, muted, grid, bg, cardBg, isDark };
+      return { primary, text, muted, grid, bg, cardBg };
     }
 
     async function carregarDados() {
@@ -111,11 +110,18 @@
         window._graficoInstance = new Chart(ctx, {
           type: 'bar',
           data: { labels: setores, datasets: [{ label: 'Peso', data: pesos, backgroundColor: coresSutis, borderRadius: 8 }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ x:{ticks:{color:theme.muted}}, y:{ticks:{color:theme.muted, beginAtZero:true}} } }
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{display:false} },
+            scales:{
+              x:{ticks:{color:theme.muted}},
+              y:{ticks:{color:theme.muted, beginAtZero:true}}
+            }
+          }
         });
       } catch(e) {
         console.error('Erro ao carregar produção:', e);
-        alert("Não foi possível carregar dados de produção.");
       }
     }
 
@@ -123,33 +129,46 @@
       try {
         const resp = await fetch(`${API_BASE}/expedicao_anual`);
         const dados = await resp.json();
-
-        console.log('Dados crus da API para Expedição:', dados);
-
         if(!dados || !dados.length) return;
 
         const ctx2 = document.getElementById('graficoExpedicao').getContext('2d');
 
-        // Labels e valores processados corretamente para datas ISO
-        const labels = [];
-        const valores = [];
+        // Processa para comparar anos mês a mês
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+        const anos = [...new Set(dados.map(d => new Date(d.mes).getFullYear()))].sort();
+
+        const valoresPorAno = {};
+        anos.forEach(a => valoresPorAno[a] = Array(12).fill(0));
         dados.forEach(d => {
           const dt = new Date(d.mes);
           if(!isNaN(dt)) {
-            const label = dt.toLocaleString('pt-BR', {month:'short', year:'numeric'});
-            labels.push(label);
-            valores.push(Number(d.valor));
-          } else {
-            console.warn("Data inválida:", d.mes);
+            const mesIndex = dt.getMonth();
+            const ano = dt.getFullYear();
+            valoresPorAno[ano][mesIndex] = Number(d.valor);
           }
         });
 
-        if(window._graficoExpedicao) window._graficoExpedicao.destroy();
         const theme = getThemeVars();
+        const cores = ["#007bff", "#28a745", "#dc3545", "#ffc107", "#17a2b8"];
+        const datasets = anos.map((ano,i) => ({
+          label: ano.toString(),
+          data: valoresPorAno[ano],
+          borderColor: cores[i % cores.length],
+          backgroundColor: hexToRGBA(cores[i % cores.length],0.1),
+          fill: true,
+          tension: 0.3
+        }));
+
+        if(window._graficoExpedicao) window._graficoExpedicao.destroy();
         window._graficoExpedicao = new Chart(ctx2, {
           type: 'line',
-          data: { labels: labels, datasets: [{ label:'Expedição', data: valores, borderColor: theme.primary, backgroundColor: hexToRGBA(theme.primary,0.1), tension:0.3, fill:true }] },
-          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:true} } }
+          data: { labels: meses, datasets: datasets },
+          options: {
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{ legend:{display:true} },
+            scales: { y:{beginAtZero:true} }
+          }
         });
 
       } catch(e) {
@@ -157,6 +176,7 @@
       }
     }
 
+    // Carrega dados
     carregarDados();
     carregarExpedicao();
 
