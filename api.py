@@ -46,7 +46,7 @@ def listar_producao():
     try:
         conn = conectar()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("SELECT id, setor, peso FROM producao ORDER BY id")
+        cursor.execute("SELECT id, setor, peso, data_registro FROM producao ORDER BY id")
         rows = cursor.fetchall()
         resultado = [serialize_row(row) for row in rows]
     except Exception as e:
@@ -106,3 +106,4 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
